@@ -1,5 +1,3 @@
-from symtable import Class
-
 import numpy as np
 from scipy.optimize import minimize
 from matplotlib import pyplot as plt
@@ -13,7 +11,7 @@ class Circular_Pipe():
         self.mannings_n = mannings_n
         self.max_Q = circ_full_Q(D=diameter, slope=slope, manning_n=mannings_n)
 
-def plot_pipe_water_level(depth, percent_D, Q, Q_max):
+def plot_pipe_water_level(depth, diameter, Q, Q_max):
     """
     Plot a circular pipe cross-section with a water level shown as a fill.
 
@@ -22,13 +20,13 @@ def plot_pipe_water_level(depth, percent_D, Q, Q_max):
     percent_D : float
         Water level as a percent of the pipe diameter (0–100).
     """
-    # Clamp percent
-    percent_D = max(0, min(100, percent_D))
+    # Percent of full depth
+    percent_D = max(0, min(1.0, depth/diameter))
 
     # Pipe geometry. This is post hydraulics cals so a unit circle is fine
     R = 1
     # Since D != 1, there's a conversion step
-    water_depth = (percent_D / 100) * 2 * R
+    water_depth = percent_D * 2 * R
     # y_list-coordinate of converted depth
     depth_y = -R + water_depth # y_list-location of the water line
 
@@ -72,7 +70,7 @@ def plot_pipe_water_level(depth, percent_D, Q, Q_max):
     ax.set_ylim(-1.2*R, 1.2*R)
     ax.axis('off')
 
-    plt.title(f"Water Level: {percent_D:.1f}% of Diameter")
+    plt.title(f"Water Level: {100*percent_D:.1f}% of Diameter")
     plt.show()
 
 def rect_normal_given_Q(
@@ -108,10 +106,12 @@ def circ_normal_given_Q(
     manning_n: float,
 ):
     # NOTE: numpy trig funcitons use radians by default
-    
     # find theta
-    
+    debug=True
     def theta_error(theta):
+        if theta < 0:
+            print(f"THETA: {theta}")
+            print(f"NEGATIVE VALUE IN TRIAL: theta = {theta}")
         # https://www.engr.scu.edu/~emaurer/hydr-watres-book/flow-in-open-channels.html
         c = 13.53 # English units
         error = np.pow(theta, -2/3) \
@@ -119,9 +119,10 @@ def circ_normal_given_Q(
                 - c * manning_n * Q * np.pow(D, -8/3) / np.sqrt(slope) 
         return abs(error)
     
-    theta_0 = 0.1
+    theta_0 = 1
+    bounds=((0, 2*np.pi),)
 
-    theta_q = minimize(theta_error, theta_0, method='Powell')
+    theta_q = minimize(theta_error, theta_0, method='Powell', bounds=bounds)
 
     y = D / 2 * (1 - np.cos(theta_q.x/2))
 
@@ -174,17 +175,17 @@ if __name__ == "__main__":
     # print(f'depth in the rectangular channel = {rect_depth}')
     # print(f'theoretical max flow under gravity in circ = {max_circ_q_check}')
 
-    steady_flow = 12 #cfs
+    steady_flow = 2.3 #cfs
     pipe_1 = Circular_Pipe(diameter=1.5, slope=0.05, mannings_n=0.014)
     pipe_1_depth_1 = circ_normal_given_Q(
-        Q=steady_flow,
+        Q = steady_flow,
         D = pipe_1.diameter,
         slope = pipe_1.slope,
         manning_n = pipe_1.mannings_n)[0]
 
     plot_pipe_water_level(
         depth = pipe_1_depth_1,
-        percent_D = pipe_1_depth_1 / pipe_1.diameter,
+        diameter = pipe_1.diameter,
         Q = steady_flow,
         Q_max = pipe_1.max_Q
     )
