@@ -6,6 +6,7 @@ Front Range.
 '''
 
 import numpy as np
+from scipy.optimize import minimize
 
 # Classes
 class SubBasin:
@@ -69,20 +70,53 @@ def get_tt(
 ):
     return Lt / (60 * K * np.sqrt(St)) 
 
+def normal_circ_given_Q(
+    Q: float,
+    diameter: float,
+    slope: float,
+    manning_n: float,
+):
+    # NOTE: numpy trig funcitons use radians by default
+    
+    # find theta
+    
+    def theta_error(theta):
+        # https://www.engr.scu.edu/~emaurer/hydr-watres-book/flow-in-open-channels.html
+        c = 13.53 # English units
+        error = np.pow(theta, -2/3) \
+                * np.pow(theta - np.sin(theta), 5/3) \
+                - c * manning_n * Q * np.pow(diameter, -8/3) / np.sqrt(slope) 
+        return abs(error)
+    
+    theta_0 = 0.1
+
+    theta_q = minimize(theta_error, theta_0, method='Powell')
+
+    y = diameter / 2 * (1 - np.cos(theta_q.x/2))
+
+    return y
 
 # Run as standalone. Not sure what this will look like yet, and during dev this 
 # is just for calling functions and creating classes from the library to verify 
-# calculation r"esults (by comparison to MHFD spreadsheets)
+# calculation results (by comparison to MHFD spreadsheets)
 if __name__ == "__main__":
     
-    test_basin = SubBasin(
-        name = "A1",
-        C5 = 0.7,
-        Li = 100,
-        Si = 0.01,
-        Lt = 100,
-        St = 0.015,
-        K = 20
+    # test_basin = SubBasin(
+    #     name = "A1",
+    #     C5 = 0.7,
+    #     Li = 100,
+    #     Si = 0.01,
+    #     Lt = 100,
+    #     St = 0.015,
+    #     K = 20
+    # )
+
+    theta_sol = normal_circ_given_Q(
+        Q = 10, 
+        diameter = 1.5,
+        slope = 0.05,
+        manning_n= 0.014
     )
-    
+        
+
     debug=True
