@@ -241,6 +241,8 @@ if __name__ == "__main__":
         "c500": 3.30
     }
 
+    sb_list = []
+
     # Don't worry about naming areas for now - this will be graphical input eventually
     area_a1 = Area(area_ac=3.0, nrcs_soil_group="A", impervious_ratio=0.65)
     area_a2 = Area(area_ac=10.0, nrcs_soil_group="B", impervious_ratio=0.15)
@@ -254,6 +256,7 @@ if __name__ == "__main__":
         areas = [area_a1, area_a2],
         P1_dict = P1
     )
+    sb_list.append(sub_basin_A)
 
     area_b1 = Area(area_ac=2.0, nrcs_soil_group="A", impervious_ratio=0.90)
     area_b2 = Area(area_ac=6.0, nrcs_soil_group="B", impervious_ratio=0.75)
@@ -268,7 +271,23 @@ if __name__ == "__main__":
         areas=[area_b1, area_b2, area_b3],
         P1_dict = P1
     )
+    sb_list.append(sub_basin_B)
 
-    route_sbs_at_dp([sub_basin_A, sub_basin_B])
+    # Ongoing dev ignore fore now (should be new branch)
+    # route_sbs_at_dp([sub_basin_A, sub_basin_B])
+
+    for sb in sb_list:
+        print('\n')
+        print(f'Basin Name: {sb.name}')
+        print(f'tc: {sb.tc}')
+        print(f'Q2:   {sb.discharge_dict['c002']}')
+        print(f'Q100: {sb.discharge_dict['c100']}')
+        print('\n')
+        for i, a in enumerate(sb.areas):
+            print(f'Sub-Area {i+1}')
+            print(f'Area: {a.area_ac}\t Soil Group: {a.nrcs_soil_group}\t Impervious Ratio: {a.impervious_ratio}')
+        print('\n-------------------------------')
+
+
 
     debug=True
